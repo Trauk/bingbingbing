@@ -1,8 +1,9 @@
-[README.md](https://github.com/user-attachments/files/35466999/README.md)
 # 2027 赛季征途 Uprising 视觉组考核（自瞄方向）
 
 基于给定视频、相机标定与 IMU 数据，完成装甲板检测、PnP 位姿估计，
 并输出带检测结果和耗时的演示视频与逐帧数据。
+
+> 本仓库的工程位于 `26机器人罗云祺/` 子目录，以下命令默认先 `cd 26机器人罗云祺`。
 
 ## 1. 环境
 
@@ -18,21 +19,23 @@ sudo apt install build-essential cmake libopencv-dev
 ## 2. 编译
 
 ```bash
+cd 26机器人罗云祺
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 ```
 
 ## 3. 数据
 
-战队提供两段考核视频，分别解压到：
+战队提供两段考核视频，解压到工程目录下：
 
 ```
-data/
-├── 18-25/    # 2026-11-13_18-25-25_462305，1770 帧
-└── 18-28/    # 2026-11-13_18-28-12_830451，1240 帧
+26机器人罗云祺/
+└── data/
+    ├── 18-25/    # 2026-11-13_18-25-25_462305，1770 帧
+    └── 18-28/    # 2026-11-13_18-28-12_830451，1240 帧
 ```
 
-每段目录下包含 `calibration/ imu/ video/ metadata.json`，约 600 MB，不随仓库提交。
+每段包含 `calibration/ imu/ video/ metadata.json`，约 600 MB，不随仓库提交。
 
 代码实际读取：
 
@@ -48,6 +51,8 @@ data/
 ## 4. 运行
 
 ```bash
+cd 26机器人罗云祺
+
 # 18-25 段
 ./build/rm_autoaim --config config/autoaim.yaml --headless --out output/18-25
 
@@ -114,7 +119,7 @@ x_m, y_m, z_m, distance_m, reproj_px, frame_ms
 ## 8. 目录结构
 
 ```
-rm_autoaim/
+26机器人罗云祺/
 ├── CMakeLists.txt
 ├── config/autoaim.yaml
 ├── include/rm/          # 接口
