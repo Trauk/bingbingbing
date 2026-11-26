@@ -1,3 +1,4 @@
+[README.md](https://github.com/user-attachments/files/35466999/README.md)
 # 2027 赛季征途 Uprising 视觉组考核（自瞄方向）
 
 基于给定视频、相机标定与 IMU 数据，完成装甲板检测、PnP 位姿估计，
@@ -23,31 +24,43 @@ cmake --build build -j
 
 ## 3. 数据
 
-`data/` 下放一次采集的 `calibration/ imu/ video/`，约 600 MB，不随仓库提交。
+战队提供两段考核视频，分别解压到：
+
+```
+data/
+├── 18-25/    # 2026-11-13_18-25-25_462305，1770 帧
+└── 18-28/    # 2026-11-13_18-28-12_830451，1240 帧
+```
+
+每段目录下包含 `calibration/ imu/ video/ metadata.json`，约 600 MB，不随仓库提交。
 
 代码实际读取：
 
 | 文件 | 用途 |
+|---|---|
 | `calibration/calibration.yaml` | 内参 K、畸变 D、相机→云台外参（米） |
-| `video/video.avi` | 1440×1080 MJPG，约 166 fps，1770 帧 |
+| `video/video.avi` | 1440×1080 MJPG，约 166 fps |
 | `video/frames.csv` | 逐帧时间戳（主机单调时钟纳秒） |
 | `imu/frame_imu.csv` | 逐帧四元数（当前仅加载，未参与解算） |
+
+时间戳以 `frames.csv` 为准，不使用 `VideoCapture` 的 PTS。
 
 ## 4. 运行
 
 ```bash
-# 全量
-./build/rm_autoaim --config config/autoaim.yaml --headless
+# 18-25 段
+./build/rm_autoaim --config config/autoaim.yaml --headless --out output/18-25
 
-# 只跑前 700 帧，并保存第 600 帧标注图
-./build/rm_autoaim --config config/autoaim.yaml --headless --max-frames 700 --dump 600
+# 18-28 段
+./build/rm_autoaim --config config/autoaim.yaml \
+  --dataset data/18-28 --headless --out output/18-28
 ```
 
 输出：
 
-- `output/demo.mp4`：30 fps 抽帧的结果视频
-- `output/result.csv`：逐帧/逐板结果
-- `output/frame_600.jpg`：单帧标注图
+- `output/18-25/demo.mp4`、`output/18-28/demo.mp4`：30 fps 抽帧结果视频
+- `output/18-25/result.csv`、`output/18-28/result.csv`：逐帧/逐板结果
+- `--dump 600` 可额外保存单帧标注图
 
 CSV 列：
 
@@ -80,20 +93,20 @@ x_m, y_m, z_m, distance_m, reproj_px, frame_ms
 
 ## 6. 结果
 
-| 指标 | 值 |
-| 有检测的帧 | 1701 / 1770（96.1%） |
-| 目标距离 | 1.04–2.17 m |
-| 误检 | 1 帧（5.14 m，远处灯带） |
-| 四角重投影误差 | 均值 3.38 px |
-| 检测 + PnP 耗时 | 均值 2.37 ms，P95 3.27 ms |
+| 数据 | 有检测帧 | 目标距离 | 重投影误差 | 检测 + PnP 耗时 |
+|---|---|---|---|---|
+| 18-25（1770 帧） | 1701（96.1%） | 1.04–2.17 m | 3.38 px | 2.37 ms（P95 3.27） |
+| 18-28（1240 帧） | 1240（100%） | 1.72–1.89 m | 3.39 px | 3.22 ms |
+
+18-25 另有 1 帧误检到 5.14 m（远处灯带），已列为已知问题。
 
 ![frame 600](docs/frame_600.jpg)
 
-完整结果见 `results/demo.mp4` 与 `results/result.csv`。
+完整结果见 `results/18-25/`、`results/18-28/` 下的 `demo.mp4` 与 `result.csv`。
 
 ## 7. 已知限制
 
-- 目标转到侧面、正面装甲接近 90° 时，两根灯条几乎重合，约 69 帧漏检；
+- 目标转到侧面、正面装甲接近 90° 时，两根灯条几乎重合，18-25 段约 69 帧漏检；
 - 蓝方没有样本，红蓝分支中的蓝色未实测；
 - 大装甲板 230 × 56 未验证；
 - 未实现数字识别与跟踪补帧（`Tracker` 已有接口，未接入主流程）。
@@ -107,13 +120,13 @@ rm_autoaim/
 ├── include/rm/          # 接口
 ├── src/                 # 实现
 ├── docs/                # 说明与结果图
-├── results/             # demo.mp4、result.csv
+├── results/             # 两段数据的 demo.mp4、result.csv
 └── README.md
 ```
 
 ## 9. 参考与 AI 说明
 
 - 参考 [sp_vision_25](https://github.com/TongjiSuperPower/sp_vision_25) 的算法思路，未复制代码；
-- 工程骨架（CMake、配置/标定/数据读取、可视化、耗时统计）由 AI 辅助生成；
-- `detector.cpp`、`solver.cpp` 由本人重写，参数与选解规则由本人调试验证；
+- 工程骨架（CMake、配置/标定/数据读取、可视化、耗时统计）与初版检测/PnP 由 AI 辅助生成；
+- 本人在此基础上逐行理解、调整参数，并在两段数据上复现和验证了全部指标；
 - 参考 OpenCV 官方文档：`solvePnPGeneric`、`SOLVEPNP_IPPE`、`solvePnPRefineLM`、`undistortPoints`。
